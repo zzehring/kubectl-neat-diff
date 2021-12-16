@@ -1,12 +1,15 @@
 # kubectl-neat-diff
 
+This is a forked version of [kubectl-neat-diff](https://github.com/sh0rez/kubectl-neat-diff).
+
 De-clutter your `kubectl diff` output using [kubectl-neat](https://github.com/itaysk/kubectl-neat) (looking at you, `managedFields`):
 
 ![](./banner.png)
 
 ## Installation
 
-You can try `go get`:
+~~You can try `go get`:~~ `go get` will likely fail due to the `kubectl-neat` project directly using the kubernetes library, which
+is [not intended to be consumed as a module](https://github.com/kubernetes/kubernetes/issues/79384). So, best to build manually.
 
 ```bash
 $ GO111MODULE=on go get github.com/sh0rez/kubectl-neat-diff
@@ -15,7 +18,7 @@ $ GO111MODULE=on go get github.com/sh0rez/kubectl-neat-diff
 If that doesn't work, clone and build manually:
 
 ```bash
-$ git clone https://github.com/sh0rez/kubectl-neat-diff
+$ git clone https://github.com/zzehring/kubectl-neat-diff
 $ cd kubectl-neat-diff
 $ make install
 ```
