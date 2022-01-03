@@ -1,16 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"github.com/go-clix/cli"
+	neat "github.com/zzehring/kubectl-neat/v2/cmd"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"strings"
-
-	"github.com/go-clix/cli"
-	neat "github.com/zzehring/kubectl-neat/v2/cmd"
 )
 
 func main() {
@@ -22,18 +20,20 @@ func main() {
 		Args:  cli.ArgsExact(2),
 	}
 
-	removeLinesRegEx := cmd.Flags().StringP("remove-matching-lines", "R", "",
-		"Remove lines matching RegEx from 'kubectl get' outputs prior to diff.")
+	ignoreLinesRegexes := cmd.Flags().StringSliceP("ignore-matching-lines", "I", []string{},
+		"Ignore changes whose lines all match RegExp.")
 
 	cmd.Run = func(cmd *cli.Command, args []string) error {
-		if err := neatifyDir(args[0], *removeLinesRegEx); err != nil {
+		if err := neatifyDir(args[0]); err != nil {
 			return err
 		}
-		if err := neatifyDir(args[1], *removeLinesRegEx); err != nil {
+		if err := neatifyDir(args[1]); err != nil {
 			return err
 		}
 
-		c := exec.Command("diff", "-uN", args[0], args[1])
+		diffArgs := formDiffCmdArguments(*ignoreLinesRegexes, args)
+
+		c := exec.Command("diff", diffArgs...)
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
 		return c.Run()
@@ -44,7 +44,7 @@ func main() {
 	}
 }
 
-func neatifyDir(dir, removeLinesRe string) error {
+func neatifyDir(dir string) error {
 	fis, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return err
@@ -62,13 +62,6 @@ func neatifyDir(dir, removeLinesRe string) error {
 			return err
 		}
 
-		if removeLinesRe != "" {
-			regExp, err := regexp.Compile(removeLinesRe)
-			if err != nil {
-				return err
-			}
-			n = []byte(removeMatchingLines(string(n), regExp))
-		}
 		if err := ioutil.WriteFile(filename, []byte(n), fi.Mode()); err != nil {
 			return err
 		}
@@ -77,13 +70,13 @@ func neatifyDir(dir, removeLinesRe string) error {
 	return nil
 }
 
-func removeMatchingLines(source string, re *regexp.Regexp) string {
-	lines := strings.Split(source, "\n")
-	var nonMatchingLines []string
-	for _, line := range lines {
-		if !re.MatchString(line) {
-			nonMatchingLines = append(nonMatchingLines, line)
-		}
+func formDiffCmdArguments(ignoreLinesRegexes, files []string) []string {
+	args := []string{"-uN"}
+
+	for _, ignoreLinesRegex := range ignoreLinesRegexes {
+		args = append(args, fmt.Sprintf("-I %s", ignoreLinesRegex))
 	}
-	return strings.Join(nonMatchingLines, "\n")
+
+	args = append(args, files...)
+	return args
 }
