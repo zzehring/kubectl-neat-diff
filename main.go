@@ -71,10 +71,10 @@ func neatifyDir(dir string) error {
 }
 
 func formDiffCmdArguments(ignoreLinesRegexes, files []string) []string {
-	args := []string{"-uN"}
+	args := []string{"-uN", "--minimal", "--width=120"}
 
 	for _, ignoreLinesRegex := range ignoreLinesRegexes {
-		args = append(args, fmt.Sprintf("-I %s", ignoreLinesRegex))
+		args = append(args, fmt.Sprintf("-I%s", ignoreLinesRegex))
 	}
 
 	args = append(args, files...)
